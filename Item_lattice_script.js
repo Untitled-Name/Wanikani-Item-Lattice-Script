@@ -11,53 +11,79 @@
 
 // Defines items globally
 let items;
+let section_states = {"radical":{loaded: false, display: false}, "kanji": {loaded: false, display: false}};
 
-const toggle_section = () => {
-    console.log("butter");
+// Toggles the display of the item lattices (items by default are unloaded)
+const toggle_section = (item_type) => {
+    let title_span = document.getElementById(`${item_type}_span`);
+    if (!section_states[item_type].loaded){
+        title_span.innerText = "▼";
+        section_states[item_type].loaded = !section_states[item_type].loaded;
+        section_states[item_type].display = !section_states[item_type].display;
+        build_lattice(item_type);
+    } else {
+        if (section_states[item_type].display){
+            title_span.innerText = "▶";
+            section_states[item_type].display = !section_states[item_type].display;
+            document.getElementById(`${item_type}_lattice`).style.display = "none";
+        } else {
+            title_span.innerText = "▼";
+            section_states[item_type].display = !section_states[item_type].display;
+            document.getElementById(`${item_type}_lattice`).style.display = "flex";
+        }
+    }
 }
 
 // Config for wkof fetch
 var wkof_config = {
-  wk_items: {
-    options: {assignments: true},
-    filters: {item_type: ["rad", "kan"]}
-  }
+    wk_items: {
+        options: {assignments: true},
+        filters: {item_type: ["rad", "kan"]}
+    }
 }
 
 // div templates and definitions
 const space = document.createElement("div");
 const circle = document.createElement("a");
-const container = document.createElement("div");
+const text_container = document.createElement("div");
+const rad_svg = document.createElement("svg");
+rad_svg.setAttribute("xmlns", "https://www.w3.org/2000/svg");
+rad_svg.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+rad_svg.setAttribute("style", `height: 1.5rem; width: 1.5rem;`);
 const rad_img = document.createElement("img");
+rad_img.setAttribute("style", `display: block; height: 1.5rem; width: 1.5rem;`)
 space.setAttribute("style", `
-  height: 3rem;
-  width: 3rem;`);
+    height: 3rem;
+    width: 3rem;`
+);
 circle.setAttribute("style", `
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  width: 100%;
-  border-radius: 50%;
-  text-decoration: none;
-  box-shadow: inset 0px -10px 13px -18px rgba(0, 0, 0, 0.50);`)
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    border-radius: 50%;
+    text-decoration: none;
+    box-shadow: inset 0px -10px 13px -18px rgba(0, 0, 0, 0.50);`
+)
 circle.setAttribute("target", "_blank");
-container.setAttribute("style", `
-  text-decoration: none;
-  font-size: 1.8rem;
-  color: white;`);
+text_container.setAttribute("style", `
+    text-decoration: none;
+    font-size: 1.8rem;
+    color: white;`
+);
 
 
 let lattice = document.createElement("div");
 lattice.setAttribute("style", `
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  margin: 0 5vw;
-`);
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-bottom: 20px;`
+);
 
 let main_section = document.createElement("section");
-main_section.setAttribute("style", `margin: 10px 0; font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;`);
+main_section.setAttribute("style", `margin: 0 5vw; font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;`);
 let main_section_title = document.createElement("h2");
 main_section_title.setAttribute("style", `padding-bottom: 0.24em; border-bottom: 1px solid #d5d5d5; font-size: 28px;`)
 main_section_title.innerText = "Item Lattices";
@@ -65,7 +91,8 @@ main_section.appendChild(main_section_title);
 
 let sub_section = document.createElement("div");
 let sub_section_title = document.createElement("h3");
-sub_section_title.setAttribute("onClick", toggle_section);
+let title_button = document.createElement("button");
+title_button.setAttribute("style", `text-decoration: none; background: none; border: none;`);
 
 // Start
 wkof.include('ItemData');
@@ -78,83 +105,94 @@ async function get_items() {
 
 // Filters items to get radicals or kanji
 const get_items_of_type = (item_type, items_arr) => {
-  let filtered_items = [];
-  for (let i = 0; i < items_arr.length; i++){
-      if (items_arr[i].object === item_type){
-          filtered_items.push(items_arr[i]);
-      }
-  }
-  //let filtered_items = items_arr.filter((item_to_filter) => {item_to_filter.object === item_type});
-  return filtered_items
+    let filtered_items = [];
+    for (let i = 0; i < items_arr.length; i++){
+        if (items_arr[i].object === item_type){
+            filtered_items.push(items_arr[i]);
+        }
+    }
+    //let filtered_items = items_arr.filter((item_to_filter) => {item_to_filter.object === item_type});
+    return filtered_items
 }
 
 // Sorts items by level (although they may already be sorted)
 const sort_by_level = (filtered_items) => {
-  //let sorted_items = filtered_items.sort((a,b) => {a.data.slug < b.data.slug});
-  let sorted_by_level = filtered_items.sort((a,b) => {a.data.level < b.data.level});
-  return sorted_by_level
+    //let sorted_items = filtered_items.sort((a,b) => {a.data.slug < b.data.slug});
+    let sorted_by_level = filtered_items.sort((a,b) => {a.data.level < b.data.level});
+    return sorted_by_level
 }
 
 // Builds the item lattice for the given item type
 const build_lattice = (item_type) => {
-  let items_obj = sort_by_level(get_items_of_type(item_type, items));
-  let type_lattice = lattice.cloneNode();
-  items_obj.map((single_item_obj, index)=>{
-    let item_space = space.cloneNode();
-    let item_circle = circle.cloneNode();
-    let item_container = container.cloneNode();
-    item_space.setAttribute("key", index);
-    let item_text = single_item_obj.data.characters;
-    if (item_text === null){
-        console.log(single_item_obj);
-        let item_rad_img = rad_img.cloneNode();
-        item_rad_img.setAttribute("src", single_item_obj.data.character_images[7].url);
-        item_container.appendChild(item_rad_img);
-    } else {item_container.innerText = item_text;}
-    item_circle.style.backgroundColor = get_item_color(single_item_obj);
-    item_circle.setAttribute("href", single_item_obj.data.document_url);
-    item_circle.appendChild(item_container);
-    item_space.appendChild(item_circle);
-    type_lattice.appendChild(item_space);
-  })
-  return type_lattice
+    let items_obj = sort_by_level(get_items_of_type(item_type, items));
+    let type_lattice = lattice.cloneNode();
+    items_obj.map((single_item_obj, index)=>{
+        let item_space = space.cloneNode();
+        let item_circle = circle.cloneNode();
+        let item_container = text_container.cloneNode();
+        item_space.setAttribute("key", index);
+        let item_text = single_item_obj.data.characters;
+        if (item_text === null){
+            console.log(single_item_obj);
+            let item_rad_img = rad_img.cloneNode();
+            //let item_rad_svg = rad_svg.cloneNode();
+            item_rad_img.setAttribute("src", single_item_obj.data.character_images[8].url);
+            //item_rad_svg.appendChild(item_rad_img);
+            item_container.appendChild(item_rad_img);
+        } else {item_container.innerText = item_text;}
+        item_circle.style.backgroundColor = get_item_color(single_item_obj);
+        item_circle.setAttribute("href", single_item_obj.data.document_url);
+        item_circle.appendChild(item_container);
+        item_space.appendChild(item_circle);
+        type_lattice.appendChild(item_space);
+    })
+    type_lattice.setAttribute("id", `${item_type}_lattice`);
+    item_type === "radical" ? document.getElementById("radical_section").appendChild(type_lattice) : document.getElementById("kanji_section").appendChild(type_lattice);
 }
 
 // Gets the corresponding color for the SRS level
 const get_item_color = (item_obj) => {
-  let item_level = item_obj.assignments.srs_stage;
-  switch (item_level){
-    case 0: return "#AAA";
-    case 1: return "#F100A0";
-    case 2: return "#F100A0";
-    case 3: return "#F100A0";
-    case 4: return "#F100A0";
-    case 5: return "#9A33B3";
-    case 6: return "#9A33B3";
-    case 7: return "#4765E0";
-    case 8: return "#00A2F3";
-    case 9: return "#FBC03D";
-    default: return "#474747";
-  }
+    let item_level = item_obj.assignments.srs_stage;
+    switch (item_level){
+        case 0: return "#AAA";
+        case 1: return "#F100A0";
+        case 2: return "#F100A0";
+        case 3: return "#F100A0";
+        case 4: return "#F100A0";
+        case 5: return "#9A33B3";
+        case 6: return "#9A33B3";
+        case 7: return "#4765E0";
+        case 8: return "#00A2F3";
+        case 9: return "#FBC03D";
+        default: return "#474747";
+    }
+}
+
+const add_span = (text) => {
+    let title_text = text === "kanji" ? "Kanji Lattice" : "Radical Lattice"
+    let span_text = title_text + ` <span id="${text}_span" style="font-size: 0.6em; color: #888;">▶</span>`
+    return span_text;
 }
 
 // Builds the lattice section
 const build_section = (item_type) => {
-    let type_lattice = build_lattice(item_type);
     let item_section = sub_section.cloneNode();
+    let item_button = title_button.cloneNode();
     let item_title = sub_section_title.cloneNode();
-    item_title.innerText = item_type === "kanji" ? "Kanji Lattice" : "Radical Lattice";
-    item_section.appendChild(item_title);
-    item_section.appendChild(type_lattice);
+    item_title.innerHTML = add_span(item_type);
+    item_button.addEventListener("click", () => {toggle_section(item_type)});
+    item_button.appendChild(item_title);
+    item_section.appendChild(item_button);
+    item_section.setAttribute("id", `${item_type}_section`);
     return item_section;
 }
 
 function initiate() {
-  'use strict';
-  let radical_section = build_section("radical");
-  let kanji_section = build_section("kanji");
-  main_section.appendChild(radical_section);
-  main_section.appendChild(kanji_section);
-  let body_div = document.querySelector("body").querySelectorAll(".footer-adjustment")[0]
-  body_div.insertBefore(main_section, body_div.querySelectorAll("script")[0]);
+    'use strict';
+    let radical_section = build_section("radical");
+    let kanji_section = build_section("kanji");
+    main_section.appendChild(radical_section);
+    main_section.appendChild(kanji_section);
+    let body_div = document.querySelector("body").querySelectorAll(".footer-adjustment")[0]
+    body_div.insertBefore(main_section, body_div.querySelectorAll("script")[0]);
 }
