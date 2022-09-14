@@ -83,7 +83,8 @@ lattice.setAttribute("style", `
 );
 
 let main_section = document.createElement("section");
-main_section.setAttribute("style", `margin: 0 5vw; font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;`);
+main_section.setAttribute("style", `font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;`);
+main_section.classList.add("container");
 let main_section_title = document.createElement("h2");
 main_section_title.setAttribute("style", `padding-bottom: 0.24em; border-bottom: 1px solid #d5d5d5; font-size: 28px;`)
 main_section_title.innerText = "Item Lattices";
@@ -134,11 +135,12 @@ const build_lattice = (item_type) => {
         let item_text = single_item_obj.data.characters;
         if (item_text === null){
             console.log(single_item_obj);
-            let item_rad_img = rad_img.cloneNode();
+            //let item_rad_img = rad_img.cloneNode();
             //let item_rad_svg = rad_svg.cloneNode();
-            item_rad_img.setAttribute("src", single_item_obj.data.character_images[8].url);
+            //item_rad_img.setAttribute("src", single_item_obj.data.character_images[8].url);
             //item_rad_svg.appendChild(item_rad_img);
-            item_container.appendChild(item_rad_img);
+            item_container.innerHTML = `<svg width="1.5rem" height="1.5rem"><image xlink:href=${single_item_obj.data.character_images[7].url} width="1.5rem" height="1.5rem"/></svg>`
+            //item_container.appendChild(item_rad_img);
         } else {item_container.innerText = item_text;}
         item_circle.style.backgroundColor = get_item_color(single_item_obj);
         item_circle.setAttribute("href", single_item_obj.data.document_url);
