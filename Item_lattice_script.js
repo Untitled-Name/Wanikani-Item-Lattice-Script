@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WaniKani Item Lattice
 // @namespace    http://tampermonkey.net/
-// @version      0.1
+// @version      0.5
 // @description  Recreates the item lattices that were previously removed from Wanikani
 // @author       Wantitled
 // @match        https://www.wanikani.com/users/*
@@ -106,21 +106,15 @@ async function get_items() {
 
 // Filters items to get radicals or kanji
 const get_items_of_type = (item_type, items_arr) => {
-    let filtered_items = [];
-    for (let i = 0; i < items_arr.length; i++){
-        if (items_arr[i].object === item_type){
-            filtered_items.push(items_arr[i]);
-        }
-    }
-    //let filtered_items = items_arr.filter((item_to_filter) => {item_to_filter.object === item_type});
+    let filtered_items = items_arr.filter(item_to_filter => item_to_filter.object === item_type);
     return filtered_items
 }
 
-// Sorts items by level (although they may already be sorted)
+// Sorts items by level
 const sort_by_level = (filtered_items) => {
-    //let sorted_items = filtered_items.sort((a,b) => {a.data.slug < b.data.slug});
-    let sorted_by_level = filtered_items.sort((a,b) => {a.data.level < b.data.level});
-    return sorted_by_level
+    filtered_items.sort((a,b) => a.data.slug - b.data.slug);
+    filtered_items.sort((a,b) => a.data.level - b.data.level);
+    return filtered_items
 }
 
 // Builds the item lattice for the given item type
@@ -135,11 +129,12 @@ const build_lattice = (item_type) => {
         let item_text = single_item_obj.data.characters;
         if (item_text === null){
             console.log(single_item_obj);
+            let svg_obj = single_item_obj.data.character_images.find(img => img.content_type === "image/svg+xml" && img.metadata.inline_styles === false);
             //let item_rad_img = rad_img.cloneNode();
             //let item_rad_svg = rad_svg.cloneNode();
             //item_rad_img.setAttribute("src", single_item_obj.data.character_images[8].url);
             //item_rad_svg.appendChild(item_rad_img);
-            item_container.innerHTML = `<svg width="1.5rem" height="1.5rem"><image xlink:href=${single_item_obj.data.character_images[7].url} width="1.5rem" height="1.5rem"/></svg>`
+            item_container.innerHTML = `<svg width="1.5rem" height="1.5rem"><image xlink:href=${svg_obj.url} width="1.5rem" height="1.5rem"/></svg>`
             //item_container.appendChild(item_rad_img);
         } else {item_container.innerText = item_text;}
         item_circle.style.backgroundColor = get_item_color(single_item_obj);
